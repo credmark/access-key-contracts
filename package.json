@@ -1,0 +1,26 @@
+{
+  "name": "access-key-contracts",
+  "version": "1.0.0",
+  "description": "The smart contracts for allowing anonymous, scalable API and Infrastructure access on-chain",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/credmark/access-key-contracts.git"
+  },
+  "author": "Neil Zumwalde",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/credmark/access-key-contracts/issues"
+  },
+  "homepage": "https://github.com/credmark/access-key-contracts#readme",
+  "dependencies": {
+    "solc": "^0.8.7-fixed",
+    "truffle": "^5.4.10"
+  }
+}
