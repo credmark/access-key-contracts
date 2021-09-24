@@ -41,6 +41,10 @@ contract AccessToken is ERC721, ERC721Burnable, AccessControl {
         delete _tokenAccessGrants[tokenId];
     }
 
+    function tokenProvider(uint tokenId) external view returns (address) {
+        return _accessGrant.ownerOf(_tokenAccessGrants[tokenId]);
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
