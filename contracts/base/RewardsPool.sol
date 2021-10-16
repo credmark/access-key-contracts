@@ -3,9 +3,10 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 
-contract RewardsPool is IRewardsPool {
+contract RewardsPool is IRewardsPool, Ownable {
     using SafeMath for uint256;
     IERC20 public stakedCredmark;
     IERC20 public credmark;
@@ -13,23 +14,38 @@ contract RewardsPool is IRewardsPool {
     uint256 public lastEmitted;
     uint256 public endTime;
 
+    bool public started;
+
     event RewardsIssued(uint256 amount);
 
-    constructor(IERC20 _credmark, IERC20 _stakedCredmark, uint _endTime) {
+    constructor(IERC20 _credmark, IERC20 _stakedCredmark) {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
-        endTime = _endTime;
+    }
+
+    function start() public onlyOwner{
+        require(!started, "Contract Already Started");
         lastEmitted = block.timestamp;
     }
 
-    function issueRewards() public {
+    function setEndTime(uint _endTime) public onlyOwner {
+        if(endTime > 0){
+            issueRewards();
+        }
+        endTime = _endTime;
+    }
+
+    function issueRewards() override public {
         uint rewardsAmount = unissuedRewards();
+        if (rewardsAmount == 0){
+            return;
+        }
         credmark.transfer(address(stakedCredmark), rewardsAmount);
         lastEmitted = block.timestamp;
         emit RewardsIssued(rewardsAmount);
     }
 
-    function unissuedRewards() public view  returns (uint) {
+    function unissuedRewards() override public view returns (uint) {
         uint mostRecentRewardTime = block.timestamp;
         if(block.timestamp > endTime) {
             mostRecentRewardTime = endTime;

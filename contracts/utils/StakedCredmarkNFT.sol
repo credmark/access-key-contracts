@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "./StakedCredmark.sol";
+import "../base/StakedCredmark.sol";
 
 contract StakedCredmarkNFT is ERC721, ERC721Enumerable, AccessControl {
     using SafeMath for uint256;
@@ -53,7 +53,7 @@ contract StakedCredmarkNFT is ERC721, ERC721Enumerable, AccessControl {
     function add(uint _id, uint _cmkAmount) public {
         credmark.transferFrom(msg.sender, address(this), _cmkAmount);
         uint nftTotalSCmkBalance = stakedCredmark.balanceOf(address(this));
-        uint sCMKcreated = stakedCredmark.stake(_cmkAmount - mintFeeCmk);
+        uint sCMKcreated = stakedCredmark.createShare(_cmkAmount - mintFeeCmk);
 
         if (nftTotalSCmkBalance == 0){
             nftValue[_id] = sCMKcreated;
