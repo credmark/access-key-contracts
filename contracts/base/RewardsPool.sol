@@ -18,26 +18,38 @@ contract RewardsPool is IRewardsPool, Ownable {
 
     event RewardsIssued(uint256 amount);
 
+    modifier hasStarted() {
+        require(started, "Pool has not started");
+        _;
+    }
+
     constructor(IERC20 _credmark, IERC20 _stakedCredmark) {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
     }
 
-    function start() public onlyOwner{
+    function start(uint256 _endTime) public onlyOwner {
         require(!started, "Contract Already Started");
+        require(_endTime > block.timestamp, "End time is not in future");
+
         lastEmitted = block.timestamp;
+        endTime = _endTime;
+        started = true;
     }
 
-    function setEndTime(uint _endTime) public onlyOwner {
-        if(endTime > 0){
+    function setEndTime(uint256 _endTime) public onlyOwner {
+        require(_endTime > block.timestamp, "End time is not in future");
+
+        if (endTime > 0) {
             issueRewards();
         }
+
         endTime = _endTime;
     }
 
-    function issueRewards() override public {
-        uint rewardsAmount = unissuedRewards();
-        if (rewardsAmount == 0){
+    function issueRewards() public override hasStarted {
+        uint256 rewardsAmount = unissuedRewards();
+        if (rewardsAmount == 0) {
             return;
         }
         credmark.transfer(address(stakedCredmark), rewardsAmount);
@@ -45,13 +57,18 @@ contract RewardsPool is IRewardsPool, Ownable {
         emit RewardsIssued(rewardsAmount);
     }
 
-    function unissuedRewards() override public view returns (uint) {
-        uint mostRecentRewardTime = block.timestamp;
-        if(block.timestamp > endTime) {
-            mostRecentRewardTime = endTime;
+    function unissuedRewards() public view override hasStarted returns (uint256) {
+        if (endTime <= lastEmitted) {
+            return 0;
         }
-        uint balance = credmark.balanceOf(address(this));
-        uint rewardsAmount = balance.mul(block.timestamp - lastEmitted).div(endTime - lastEmitted);
+
+        uint256 lastRewardTime = block.timestamp;
+        if (block.timestamp > endTime) {
+            lastRewardTime = endTime;
+        }
+
+        uint256 balance = credmark.balanceOf(address(this));
+        uint256 rewardsAmount = balance.mul(lastRewardTime - lastEmitted).div(endTime - lastEmitted);
         return rewardsAmount;
     }
 }
