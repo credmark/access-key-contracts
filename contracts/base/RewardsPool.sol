@@ -28,7 +28,7 @@ contract RewardsPool is IRewardsPool, Ownable {
         credmark = _credmark;
     }
 
-    function start(uint256 _endTime) public onlyOwner {
+    function start(uint256 _endTime) external onlyOwner {
         require(!started, "Contract Already Started");
         require(_endTime > block.timestamp, "End time is not in future");
 
@@ -37,7 +37,7 @@ contract RewardsPool is IRewardsPool, Ownable {
         started = true;
     }
 
-    function setEndTime(uint256 _endTime) public onlyOwner {
+    function setEndTime(uint256 _endTime) external onlyOwner {
         require(_endTime > block.timestamp, "End time is not in future");
 
         if (endTime > 0) {
