@@ -2,16 +2,14 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../base/IStakedCredmark.sol";
 
-contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
+contract CredmarkAccessKey is ERC721, Ownable {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
@@ -58,15 +56,15 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
     }
 
     // Configuration Functions
-    function setFee(uint256 _feeAmount) external onlyOwner {
-        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, _feeAmount);
+    function setFee(uint256 feeAmount) external onlyOwner {
+        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, feeAmount);
         _feeIdCounter.increment();
 
-        emit FeeChanged(_feeAmount);
+        emit FeeChanged(feeAmount);
     }
 
-    function approveCmkForSCmk(uint256 _cmkAmount) external onlyOwner {
-        credmark.approve(address(stakedCredmark), _cmkAmount);
+    function approveCmkForSCmk(uint256 cmkAmount) external onlyOwner {
+        credmark.approve(address(stakedCredmark), cmkAmount);
     }
 
     function getFee() public view returns (uint256) {
@@ -98,9 +96,9 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
     }
 
     // User Functions
-    function mint(uint256 _cmkAmount) external returns (uint256 tokenId) {
+    function mint(uint256 cmkAmount) external returns (uint256 tokenId) {
         tokenId = _tokenIdCounter.current();
-        addCmk(tokenId, _cmkAmount);
+        addCmk(tokenId, cmkAmount);
         _mintedTimestamp[tokenId] = block.timestamp;
         _safeMint(msg.sender, tokenId);
         _tokenIdCounter.increment();
@@ -108,10 +106,10 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
         emit AccessKeyMinted(tokenId);
     }
 
-    function addCmk(uint256 tokenId, uint256 _cmkAmount) public {
+    function addCmk(uint256 tokenId, uint256 cmkAmount) public {
         require(_exists(tokenId),"No such token");
-        credmark.transferFrom(msg.sender, address(this), _cmkAmount);
-        uint256 sCmk = stakedCredmark.createShare(_cmkAmount);
+        credmark.transferFrom(msg.sender, address(this), cmkAmount);
+        uint256 sCmk = stakedCredmark.createShare(cmkAmount);
         _sharesLocked[tokenId] += sCmk;
     }
 
@@ -152,14 +150,14 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
         address from,
         address to,
         uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
+    ) internal override(ERC721) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable, AccessControl)
+        override(ERC721)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
