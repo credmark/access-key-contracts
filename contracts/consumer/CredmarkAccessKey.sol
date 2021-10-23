@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../base/IStakedCredmark.sol";
+import "./ICredmarkAccessKey.sol";
 
-contract CredmarkAccessKey is ERC721, Ownable {
+contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, Ownable {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
@@ -25,12 +26,12 @@ contract CredmarkAccessKey is ERC721, Ownable {
     event AccessKeyMinted(uint256 tokenId);
     event AccessKeyBurned(uint256 tokenId);
     event AccessKeyLiquidated(uint256 tokenId);
-    event CmkAddedToKey(uint256 tokenId, uint256 amount);
+    event CredmarkAddedToKey(uint256 tokenId, uint256 amount);
 
-    mapping(uint256 => CredmarkAccessFee) public _fees;
+    CredmarkAccessFee[] public fees;
 
     IStakedCredmark public stakedCredmark;
-    address private credmarkDAO;
+    address public credmarkDAO;
     IERC20 public credmark;
 
     mapping(uint256 => uint256) private _mintedTimestamp;
@@ -46,7 +47,7 @@ contract CredmarkAccessKey is ERC721, Ownable {
         credmark = _credmark;
         credmarkDAO = _credmarkDAO;
 
-        _fees[0] = CredmarkAccessFee(block.timestamp, _feeAmount);
+        fees[0] = CredmarkAccessFee(block.timestamp, _feeAmount);
         _feeIdCounter.increment();
     }
 
@@ -56,47 +57,42 @@ contract CredmarkAccessKey is ERC721, Ownable {
     }
 
     // Configuration Functions
-    function setFee(uint256 feeAmount) external onlyOwner {
-        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, feeAmount);
+    function setFee(uint256 feeAmount) external override onlyOwner {
+        fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, feeAmount);
         _feeIdCounter.increment();
 
         emit FeeChanged(feeAmount);
     }
 
-    function approveCmkForSCmk(uint256 cmkAmount) external onlyOwner {
+    function approveCmkForSCmk(uint256 cmkAmount) external  override onlyOwner {
         credmark.approve(address(stakedCredmark), cmkAmount);
     }
 
-    function getFee() public view returns (uint256) {
-        return _fees[_feeIdCounter.current() - 1].feePerSecond;
-    }
-
-    function feesAccumulated(uint256 tokenId) public view returns (uint256 aggFees) {
+    function feesAccumulated(uint256 tokenId) public view override returns (uint256 aggFees) {
         uint256 mintedTimestamp = _mintedTimestamp[tokenId];
 
         // TODO: Test this shit out of this
         for (uint256 i = _feeIdCounter.current() - 1; i >= 0; i--) {
 
             if( i == _feeIdCounter.current() - 1){
-                aggFees += _fees[i].feePerSecond.mul(block.timestamp - _fees[i].fromTimestamp);
+                aggFees += fees[i].feePerSecond.mul(block.timestamp - fees[i].fromTimestamp);
                 continue;
             }
 
-            aggFees += _fees[i].feePerSecond.mul(_fees[i+1].fromTimestamp - max(mintedTimestamp, _fees[i].fromTimestamp));
+            aggFees += fees[i].feePerSecond.mul(fees[i+1].fromTimestamp - max(mintedTimestamp, fees[i].fromTimestamp));
             
-            if (_fees[i].fromTimestamp <= mintedTimestamp){
+            if (fees[i].fromTimestamp <= mintedTimestamp){
                 break;
             }
         }
-
     }
 
-    function cmkValue(uint256 tokenId) public view returns (uint256) {
+    function cmkValue(uint256 tokenId) public view override returns (uint256) {
         return stakedCredmark.sharesToCmk(_sharesLocked[tokenId]);
     }
 
     // User Functions
-    function mint(uint256 cmkAmount) external returns (uint256 tokenId) {
+    function mint(uint256 cmkAmount) external override returns (uint256 tokenId) {
         tokenId = _tokenIdCounter.current();
         addCmk(tokenId, cmkAmount);
         _mintedTimestamp[tokenId] = block.timestamp;
@@ -106,30 +102,32 @@ contract CredmarkAccessKey is ERC721, Ownable {
         emit AccessKeyMinted(tokenId);
     }
 
-    function addCmk(uint256 tokenId, uint256 cmkAmount) public {
+    function addCmk(uint256 tokenId, uint256 cmkAmount) public override {
         require(_exists(tokenId),"No such token");
         credmark.transferFrom(msg.sender, address(this), cmkAmount);
         uint256 sCmk = stakedCredmark.createShare(cmkAmount);
         _sharesLocked[tokenId] += sCmk;
+
+        emit CredmarkAddedToKey(tokenId, cmkAmount);
     }
 
-    function burn(uint256 tokenId) external {
+    function burn(uint256 tokenId) external override {
         require(msg.sender == ownerOf(tokenId), "Only owner can burn their NFT");
         burnInternal(tokenId);
     }
 
-    function liquidate(uint256 tokenId) external isLiquidateable(tokenId) {
+    function liquidate(uint256 tokenId) external override isLiquidateable(tokenId) {
         uint _feesAccumulated = cmkValue(tokenId);
         burnInternal(tokenId);
         credmark.transfer(msg.sender, _feesAccumulated.div(20));
     }
 
-    function sweep() external {
+    function sweep() external override {
         credmark.transfer(address(stakedCredmark), credmark.balanceOf(address(this)).div(2));
         credmark.transfer(credmarkDAO, credmark.balanceOf(address(this)));
     }
 
-    function burnInternal(uint256 tokenId)  internal {
+    function burnInternal(uint256 tokenId) internal {
         uint256 fee = feesAccumulated(tokenId);
 
         if (feesAccumulated(tokenId) > cmkValue(tokenId)){
