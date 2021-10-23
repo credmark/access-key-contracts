@@ -19,15 +19,15 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
     Counters.Counter private _feeIdCounter;
 
     struct CredmarkAccessFee {
-        uint256 startTime;
-        uint256 endTime;
-        uint256 fee;
+        uint256 fromTimestamp;
+        uint256 feePerSecond;
     }
 
     event FeeChanged(uint256 feeAmount);
     event AccessKeyMinted(uint256 tokenId);
     event AccessKeyBurned(uint256 tokenId);
     event AccessKeyLiquidated(uint256 tokenId);
+    event CmkAddedToKey(uint256 tokenId, uint256 amount);
 
     mapping(uint256 => CredmarkAccessFee) public _fees;
 
@@ -48,16 +48,18 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
         credmark = _credmark;
         credmarkDAO = _credmarkDAO;
 
-        _fees[0] = CredmarkAccessFee(block.timestamp, 0, _feeAmount);
+        _fees[0] = CredmarkAccessFee(block.timestamp, _feeAmount);
         _feeIdCounter.increment();
+    }
+
+    modifier isLiquidateable(uint256 tokenId) {
+        require( feesAccumulated(tokenId) >= cmkValue(tokenId), "Not liquidiateable");
+        _;
     }
 
     // Configuration Functions
     function setFee(uint256 _feeAmount) external onlyOwner {
-        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, 0, _feeAmount);
-        if (_feeIdCounter.current() > 0) {
-            _fees[_feeIdCounter.current() - 1].endTime = block.timestamp;
-        }
+        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp, _feeAmount);
         _feeIdCounter.increment();
 
         emit FeeChanged(_feeAmount);
@@ -68,25 +70,27 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
     }
 
     function getFee() public view returns (uint256) {
-        return _fees[_feeIdCounter.current() - 1].fee;
+        return _fees[_feeIdCounter.current() - 1].feePerSecond;
     }
 
     function feesAccumulated(uint256 tokenId) public view returns (uint256 aggFees) {
         uint256 mintedTimestamp = _mintedTimestamp[tokenId];
-        for (uint256 i = 0; i < _feeIdCounter.current(); i++) {
-            if (_fees[i].endTime == 0 || mintedTimestamp < _fees[i].endTime) {
-                uint256 start = max(mintedTimestamp, _fees[i].startTime);
-                uint256 end = block.timestamp;
-                if (_fees[i].endTime > 0) {
-                    end = _fees[i].endTime;
-                }
-                aggFees += _fees[i].fee.mul(end - start);
+
+        // TODO: Test this shit out of this
+        for (uint256 i = _feeIdCounter.current() - 1; i >= 0; i--) {
+
+            if( i == _feeIdCounter.current() - 1){
+                aggFees += _fees[i].feePerSecond.mul(block.timestamp - _fees[i].fromTimestamp);
+                continue;
+            }
+
+            aggFees += _fees[i].feePerSecond.mul(_fees[i+1].fromTimestamp - max(mintedTimestamp, _fees[i].fromTimestamp));
+            
+            if (_fees[i].fromTimestamp <= mintedTimestamp){
+                break;
             }
         }
 
-        if (aggFees > cmkValue(tokenId)) {
-            aggFees = cmkValue(tokenId);
-        }
     }
 
     function cmkValue(uint256 tokenId) public view returns (uint256) {
@@ -105,6 +109,7 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
     }
 
     function addCmk(uint256 tokenId, uint256 _cmkAmount) public {
+        require(_exists(tokenId),"No such token");
         credmark.transferFrom(msg.sender, address(this), _cmkAmount);
         uint256 sCmk = stakedCredmark.createShare(_cmkAmount);
         _sharesLocked[tokenId] += sCmk;
@@ -112,31 +117,35 @@ contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl, Ownable {
 
     function burn(uint256 tokenId) external {
         require(msg.sender == ownerOf(tokenId), "Only owner can burn their NFT");
+        burnInternal(tokenId);
+    }
+
+    function liquidate(uint256 tokenId) external isLiquidateable(tokenId) {
+        uint _feesAccumulated = cmkValue(tokenId);
+        burnInternal(tokenId);
+        credmark.transfer(msg.sender, _feesAccumulated.div(20));
+    }
+
+    function sweep() external {
+        credmark.transfer(address(stakedCredmark), credmark.balanceOf(address(this)).div(2));
+        credmark.transfer(credmarkDAO, credmark.balanceOf(address(this)));
+    }
+
+    function burnInternal(uint256 tokenId)  internal {
         uint256 fee = feesAccumulated(tokenId);
+
+        if (feesAccumulated(tokenId) > cmkValue(tokenId)){
+            fee = cmkValue(tokenId);
+        }
+
         stakedCredmark.removeShare(_sharesLocked[tokenId]);
         uint256 returned = cmkValue(tokenId) - fee;
-        credmark.transfer(msg.sender, returned);
-        credmark.transfer(address(stakedCredmark), fee.div(2));
-        credmark.transfer(credmarkDAO, fee.div(2));
+        credmark.transfer(ownerOf(tokenId), returned);
+
+        _sharesLocked[tokenId] = 0;
         _burn(tokenId);
 
         emit AccessKeyBurned(tokenId);
-    }
-
-    // Liquidation Functions
-    function isLiquidateable(uint256 tokenId) public view returns (bool) {
-        return feesAccumulated(tokenId) >= cmkValue(tokenId);
-    }
-
-    function liquidate(uint256 tokenId) external {
-        require(isLiquidateable(tokenId), "Not Insolvent");
-        uint256 cmkAmount = cmkValue(tokenId);
-        stakedCredmark.removeShare(_sharesLocked[tokenId]);
-        credmark.transfer(address(stakedCredmark), cmkAmount.div(2));
-        credmark.transfer(credmarkDAO, cmkAmount.div(2));
-        _burn(tokenId);
-
-        emit AccessKeyLiquidated(tokenId);
     }
 
     function _beforeTokenTransfer(
