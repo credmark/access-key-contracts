@@ -20,6 +20,9 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     mapping(address => uint256) private _shareBalances;
     uint256 private _shareTotalSupply;
 
+    uint32 private _lastIssuedRewards;
+    uint32 private constant REWARDS_PERIOD_S = 3600 * 8;
+
     function setRewardsPool(address rewardsPool) external override onlyOwner {
         _rewardsPool = IRewardsPool(rewardsPool);
     }
@@ -61,7 +64,10 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     }
 
     function removeShare(uint256 _share) external override {
-        issueRewards();
+        if(block.timestamp > _lastIssuedRewards + REWARDS_PERIOD_S){
+            issueRewards();
+        }
+
         uint256 cmk = sharesToCmk(_share);
         _burn(msg.sender, _share);
         credmark.transfer(msg.sender, cmk);
