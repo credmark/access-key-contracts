@@ -49,8 +49,8 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     }
 
     function issueRewards() internal {
-        if (address(_rewardsPool) != address(0)) {
-            IRewardsPool(_rewardsPool).issueRewards();
+        if (address(_rewardsPool) != address(0) && block.timestamp.sub(_rewardsPool.getLastEmitted()) > 24 hours) {
+            _rewardsPool.issueRewards();
         }
     }
 

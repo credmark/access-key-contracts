@@ -47,6 +47,10 @@ contract RewardsPool is IRewardsPool, Ownable {
         endTime = _endTime;
     }
 
+    function getLastEmitted() external view override returns (uint256) {
+        return lastEmitted;
+    }
+
     function issueRewards() public override hasStarted {
         uint256 rewardsAmount = unissuedRewards();
         if (rewardsAmount == 0) {

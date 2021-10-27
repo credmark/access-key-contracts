@@ -43,7 +43,7 @@ describe("Credmark Access Key", () => {
     [cmk, stakedCmk, credmarkAccessKey] = await waffle.loadFixture(fixture);
   });
 
-  describe("fee", () => {
+  describe("#fee", () => {
     it("should get current fee", async () => {
       const feeCount = await credmarkAccessKey.getFeesCount();
       const fee = await credmarkAccessKey.fees(feeCount.sub(1));
@@ -67,7 +67,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("stakedCmkSweepPercent", () => {
+  describe("#stakedCmkSweepPercent", () => {
     const newStakedCmkSweepPercent = BigNumber.from(80);
 
     it("should get current stakedCmkSweepPercent", async () => {
@@ -95,7 +95,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("liquidatorRewardPercent", () => {
+  describe("#liquidatorRewardPercent", () => {
     const newLiquidatorRewardPercent = BigNumber.from(80);
 
     it("should get current liquidatorRewardPercent", async () => {
@@ -123,7 +123,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("mint", () => {
+  describe("#mint", () => {
     it("should mint nft", async () => {
       await credmarkAccessKey.approveCmkForSCmk(1000);
 
@@ -199,7 +199,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("burn", () => {
+  describe("#burn", () => {
     it("should burn nft", async () => {
       await credmarkAccessKey.approveCmkForSCmk(1000);
 
@@ -227,7 +227,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("liquidate", () => {
+  describe("#liquidate", () => {
     it("should liquidate by owner when defaulting fees", async () => {
       const initialMintAmount = BigNumber.from(1000);
       await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
@@ -299,7 +299,7 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("sweep", () => {
+  describe("#sweep", () => {
     it("should sweep", async () => {
       const initialMintAmount = BigNumber.from(1000);
       await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);

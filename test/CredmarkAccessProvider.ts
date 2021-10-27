@@ -7,7 +7,7 @@ import { CredmarkAccessProvider } from "../typechain/CredmarkAccessProvider";
 import { MockCMK } from "../typechain/MockCMK";
 import { StakedCredmark } from "../typechain/StakedCredmark";
 
-describe("Credmark Access Key", () => {
+describe("Credmark Access Provider", () => {
   let cmk: MockCMK;
   let wallet: SignerWithAddress;
   let otherWallet: SignerWithAddress;
