@@ -22,7 +22,9 @@ async function main() {
     stakedCmk.address,
     mockCmk.address,
     mockCmk.address,
-    100
+    100,
+    5,
+    50
   )) as CredmarkAccessKey;
 
   const credmarkAccessProviderFactory = await ethers.getContractFactory("CredmarkAccessProvider");
