@@ -55,6 +55,7 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     }
 
     function createShare(uint256 _amount) external override returns (uint256 sCmk) {
+        issueRewards();
         sCmk = cmkToShares(_amount);
         _mint(msg.sender, sCmk);
         credmark.transferFrom(msg.sender, address(this), _amount);
