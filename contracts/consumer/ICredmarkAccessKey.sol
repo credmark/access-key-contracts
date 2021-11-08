@@ -7,9 +7,9 @@ interface ICredmarkAccessKey {
 
     function setFee(uint256 feeAmount) external;
 
-    function setLiquidatorRewardPercent(uint256 _liquidatorRewardPercent) external;
+    function setLiquidatorReward(uint256 _liquidatorRewardBp) external;
 
-    function setStakedCmkSweepPercent(uint256 _stakedCmkSweepPercent) external;
+    function setStakedCmkSweepShare(uint256 _stakedCmkSweepShareBp) external;
 
     function approveCmkForSCmk(uint256 cmkAmount) external;
 

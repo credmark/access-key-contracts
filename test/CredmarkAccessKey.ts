@@ -15,8 +15,8 @@ describe("Credmark Access Key", () => {
   let credmarkDao: SignerWithAddress;
 
   const cmkFeePerSec = BigNumber.from(100);
-  const liquidatorRewardPercent = BigNumber.from(5);
-  const stakedCmkSweepPercent = BigNumber.from(40);
+  const liquidatorRewardBp = BigNumber.from(500);
+  const stakedCmkSweepShareBp = BigNumber.from(4000);
 
   const fixture = async (): Promise<[MockCMK, StakedCredmark, CredmarkAccessKey]> => {
     const mockCmkFactory = await ethers.getContractFactory("MockCMK");
@@ -31,8 +31,8 @@ describe("Credmark Access Key", () => {
       _cmk.address,
       credmarkDao.address,
       cmkFeePerSec,
-      liquidatorRewardPercent,
-      stakedCmkSweepPercent
+      liquidatorRewardBp,
+      stakedCmkSweepShareBp
     )) as CredmarkAccessKey;
 
     return [_cmk, _stakedCmk, _credmarkAccessKey];
@@ -67,58 +67,59 @@ describe("Credmark Access Key", () => {
     });
   });
 
-  describe("#stakedCmkSweepPercent", () => {
-    const newStakedCmkSweepPercent = BigNumber.from(80);
+  describe("#stakedCmkSweepShare", () => {
+    const newStakedCmkSweepShareBp = BigNumber.from(8000);
 
-    it("should get current stakedCmkSweepPercent", async () => {
-      expect(await credmarkAccessKey.stakedCmkSweepPercent()).to.be.equal(stakedCmkSweepPercent);
+    it("should get current stakedCmkSweepShareBp", async () => {
+      expect(await credmarkAccessKey.stakedCmkSweepShareBp()).to.be.equal(stakedCmkSweepShareBp);
     });
 
-    it("should allow owner to set stakedCmkSweepPercent", async () => {
-      await expect(credmarkAccessKey.setStakedCmkSweepPercent(newStakedCmkSweepPercent))
-        .to.emit(credmarkAccessKey, "StakedCmkSweepPercentChanged")
-        .withArgs(newStakedCmkSweepPercent);
-      expect(await credmarkAccessKey.stakedCmkSweepPercent()).to.be.equal(newStakedCmkSweepPercent);
+    it("should allow owner to set stakedCmkSweepShare", async () => {
+      await expect(credmarkAccessKey.setStakedCmkSweepShare(newStakedCmkSweepShareBp))
+        .to.emit(credmarkAccessKey, "StakedCmkSweepShareChanged")
+        .withArgs(newStakedCmkSweepShareBp);
+
+      expect(await credmarkAccessKey.stakedCmkSweepShareBp()).to.be.equal(newStakedCmkSweepShareBp);
     });
 
-    it("should not allow to set invalid percent", async () => {
-      await expect(credmarkAccessKey.setStakedCmkSweepPercent(BigNumber.from(101))).to.be.revertedWith(
-        "Percent not in 0-100 range"
+    it("should not allow to set invalid bp", async () => {
+      await expect(credmarkAccessKey.setStakedCmkSweepShare(BigNumber.from(10001))).to.be.revertedWith(
+        "Basis Point not in 0-10000 range"
       );
-      await expect(credmarkAccessKey.setStakedCmkSweepPercent(BigNumber.from(-1))).to.be.reverted;
+      await expect(credmarkAccessKey.setStakedCmkSweepShare(BigNumber.from(-1))).to.be.reverted;
     });
 
-    it("should not allow non owner to set stakedCmkSweepPercent", async () => {
+    it("should not allow non owner to set stakedCmkSweepShare", async () => {
       await expect(
-        credmarkAccessKey.connect(otherWallet).setStakedCmkSweepPercent(newStakedCmkSweepPercent)
+        credmarkAccessKey.connect(otherWallet).setStakedCmkSweepShare(newStakedCmkSweepShareBp)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
-  describe("#liquidatorRewardPercent", () => {
-    const newLiquidatorRewardPercent = BigNumber.from(80);
+  describe("#liquidatorReward", () => {
+    const newLiquidatorRewardBp = BigNumber.from(8000);
 
-    it("should get current liquidatorRewardPercent", async () => {
-      expect(await credmarkAccessKey.liquidatorRewardPercent()).to.be.equal(liquidatorRewardPercent);
+    it("should get current liquidatorRewardBp", async () => {
+      expect(await credmarkAccessKey.liquidatorRewardBp()).to.be.equal(liquidatorRewardBp);
     });
 
-    it("should allow owner to set liquidatorRewardPercent", async () => {
-      await expect(credmarkAccessKey.setLiquidatorRewardPercent(newLiquidatorRewardPercent))
-        .to.emit(credmarkAccessKey, "LiquidatorRewardPercentChanged")
-        .withArgs(newLiquidatorRewardPercent);
-      expect(await credmarkAccessKey.liquidatorRewardPercent()).to.be.equal(newLiquidatorRewardPercent);
+    it("should allow owner to set liquidatorReward", async () => {
+      await expect(credmarkAccessKey.setLiquidatorReward(newLiquidatorRewardBp))
+        .to.emit(credmarkAccessKey, "LiquidatorRewardChanged")
+        .withArgs(newLiquidatorRewardBp);
+      expect(await credmarkAccessKey.liquidatorRewardBp()).to.be.equal(newLiquidatorRewardBp);
     });
 
-    it("should not allow to set invalid percent", async () => {
-      await expect(credmarkAccessKey.setLiquidatorRewardPercent(BigNumber.from(101))).to.be.revertedWith(
-        "Percent not in 0-100 range"
+    it("should not allow to set invalid bp", async () => {
+      await expect(credmarkAccessKey.setLiquidatorReward(BigNumber.from(10001))).to.be.revertedWith(
+        "Basis Point not in 0-10000 range"
       );
-      await expect(credmarkAccessKey.setLiquidatorRewardPercent(BigNumber.from(-1))).to.be.reverted;
+      await expect(credmarkAccessKey.setLiquidatorReward(BigNumber.from(-1))).to.be.reverted;
     });
 
-    it("should not allow non owner to set liquidatorRewardPercent", async () => {
+    it("should not allow non owner to set liquidatorReward", async () => {
       await expect(
-        credmarkAccessKey.connect(otherWallet).setLiquidatorRewardPercent(newLiquidatorRewardPercent)
+        credmarkAccessKey.connect(otherWallet).setLiquidatorReward(newLiquidatorRewardBp)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
@@ -245,13 +246,13 @@ describe("Credmark Access Key", () => {
         .to.emit(credmarkAccessKey, "AccessKeyBurned")
         .withArgs(tokenId)
         .and.to.emit(credmarkAccessKey, "AccessKeyLiquidated")
-        .withArgs(tokenId, wallet.address, initialMintAmount.mul(liquidatorRewardPercent).div(100));
+        .withArgs(tokenId, wallet.address, initialMintAmount.mul(liquidatorRewardBp).div(10000));
 
       expect(await credmarkAccessKey.balanceOf(wallet.address)).to.be.equal(BigNumber.from(0));
 
       const cmkBalanceAfter = await cmk.balanceOf(wallet.address);
       expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(
-        initialMintAmount.mul(liquidatorRewardPercent).div(100)
+        initialMintAmount.mul(liquidatorRewardBp).div(10000)
       );
     });
 
@@ -272,13 +273,13 @@ describe("Credmark Access Key", () => {
         .to.emit(credmarkAccessKey, "AccessKeyBurned")
         .withArgs(tokenId)
         .and.to.emit(credmarkAccessKey, "AccessKeyLiquidated")
-        .withArgs(tokenId, otherWallet.address, initialMintAmount.mul(liquidatorRewardPercent).div(100));
+        .withArgs(tokenId, otherWallet.address, initialMintAmount.mul(liquidatorRewardBp).div(10000));
 
       expect(await credmarkAccessKey.balanceOf(wallet.address)).to.be.equal(BigNumber.from(0));
 
       const cmkBalanceAfter = await cmk.balanceOf(otherWallet.address);
       expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(
-        initialMintAmount.mul(liquidatorRewardPercent).div(100)
+        initialMintAmount.mul(liquidatorRewardBp).div(10000)
       );
     });
 
@@ -316,13 +317,13 @@ describe("Credmark Access Key", () => {
       await expect(credmarkAccessKey.sweep())
         .to.emit(credmarkAccessKey, "Sweeped")
         .withArgs(
-          initialMintAmount.mul(stakedCmkSweepPercent).div(100),
-          initialMintAmount.mul(BigNumber.from(100).sub(stakedCmkSweepPercent)).div(100)
+          initialMintAmount.mul(stakedCmkSweepShareBp).div(10000),
+          initialMintAmount.mul(BigNumber.from(10000).sub(stakedCmkSweepShareBp)).div(10000)
         );
 
-      expect(await cmk.balanceOf(stakedCmk.address)).to.be.equal(initialMintAmount.mul(stakedCmkSweepPercent).div(100));
+      expect(await cmk.balanceOf(stakedCmk.address)).to.be.equal(initialMintAmount.mul(stakedCmkSweepShareBp).div(10000));
       expect(await cmk.balanceOf(credmarkDao.address)).to.be.equal(
-        initialMintAmount.mul(BigNumber.from(100).sub(stakedCmkSweepPercent)).div(100)
+        initialMintAmount.mul(BigNumber.from(10000).sub(stakedCmkSweepShareBp)).div(10000)
       );
     });
 

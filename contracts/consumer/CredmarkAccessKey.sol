@@ -21,8 +21,8 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
     }
 
     event FeeChanged(uint256 feeAmount);
-    event LiquidatorRewardPercentChanged(uint256 liquidatorRewardPercent);
-    event StakedCmkSweepPercentChanged(uint256 stakedCmkSweepPercent);
+    event LiquidatorRewardChanged(uint256 liquidatorRewardBp);
+    event StakedCmkSweepShareChanged(uint256 stakedCmkShareBp);
     event AccessKeyMinted(uint256 tokenId);
     event AccessKeyBurned(uint256 tokenId);
     event AccessKeyLiquidated(uint256 tokenId, address liquidator, uint256 reward);
@@ -30,8 +30,8 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
     event Sweeped(uint256 cmkToSCmk, uint256 cmkToDao);
 
     CredmarkAccessFee[] public fees;
-    uint256 public liquidatorRewardPercent;
-    uint256 public stakedCmkSweepPercent;
+    uint256 public liquidatorRewardBp;
+    uint256 public stakedCmkSweepShareBp;
 
     IStakedCredmark public stakedCredmark;
     address public credmarkDAO;
@@ -45,16 +45,16 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         IERC20 _credmark,
         address _credmarkDAO,
         uint256 _feePerSecond,
-        uint256 _liquidatorRewardPercent,
-        uint256 _stakedCmkSweepPercent
+        uint256 _liquidatorRewardBp,
+        uint256 _stakedCmkSweepShareBp
     ) ERC721("CredmarkAccessKey", "accessCMK") {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
         credmarkDAO = _credmarkDAO;
 
         fees.push(CredmarkAccessFee(block.timestamp, _feePerSecond));
-        liquidatorRewardPercent = _liquidatorRewardPercent;
-        stakedCmkSweepPercent = _stakedCmkSweepPercent;
+        liquidatorRewardBp = _liquidatorRewardBp;
+        stakedCmkSweepShareBp = _stakedCmkSweepShareBp;
     }
 
     modifier isLiquidateable(uint256 tokenId) {
@@ -72,16 +72,16 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         return fees.length;
     }
 
-    function setLiquidatorRewardPercent(uint256 _liquidatorRewardPercent) external override onlyOwner {
-        require(_liquidatorRewardPercent <= 100, "Percent not in 0-100 range");
-        liquidatorRewardPercent = _liquidatorRewardPercent;
-        emit LiquidatorRewardPercentChanged(_liquidatorRewardPercent);
+    function setLiquidatorReward(uint256 _liquidatorRewardBp) external override onlyOwner {
+        require(_liquidatorRewardBp <= 10000, "Basis Point not in 0-10000 range");
+        liquidatorRewardBp = _liquidatorRewardBp;
+        emit LiquidatorRewardChanged(_liquidatorRewardBp);
     }
 
-    function setStakedCmkSweepPercent(uint256 _stakedCmkSweepPercent) external override onlyOwner {
-        require(_stakedCmkSweepPercent <= 100, "Percent not in 0-100 range");
-        stakedCmkSweepPercent = _stakedCmkSweepPercent;
-        emit StakedCmkSweepPercentChanged(_stakedCmkSweepPercent);
+    function setStakedCmkSweepShare(uint256 _stakedCmkSweepShareBp) external override onlyOwner {
+        require(_stakedCmkSweepShareBp <= 10000, "Basis Point not in 0-10000 range");
+        stakedCmkSweepShareBp = _stakedCmkSweepShareBp;
+        emit StakedCmkSweepShareChanged(stakedCmkSweepShareBp);
     }
 
     function approveCmkForSCmk(uint256 cmkAmount) external override onlyOwner {
@@ -140,7 +140,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         uint256 _cmkValue = cmkValue(tokenId);
         burnInternal(tokenId);
 
-        uint256 liquidatorReward = (_cmkValue * liquidatorRewardPercent) / 100;
+        uint256 liquidatorReward = (_cmkValue * liquidatorRewardBp) / 10000;
         if (liquidatorReward > 0) {
             credmark.transfer(msg.sender, liquidatorReward);
         }
@@ -148,7 +148,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
     }
 
     function sweep() external override {
-        uint256 cmkToSCmk = (credmark.balanceOf(address(this)) * stakedCmkSweepPercent) / 100;
+        uint256 cmkToSCmk = (credmark.balanceOf(address(this)) * stakedCmkSweepShareBp) / 10000;
         if (cmkToSCmk > 0) {
             credmark.transfer(address(stakedCredmark), cmkToSCmk);
         }

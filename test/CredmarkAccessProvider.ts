@@ -16,8 +16,8 @@ describe("Credmark Access Provider", () => {
   let credmarkAccessProvider: CredmarkAccessProvider;
 
   const cmkFeePerSec = BigNumber.from(100);
-  const liquidatorRewardPercent = BigNumber.from(5);
-  const stakedCmkSweepPercent = BigNumber.from(50);
+  const liquidatorRewardBp = BigNumber.from(500);
+  const stakedCmkSweepShareBp = BigNumber.from(5000);
 
   const fixture = async (): Promise<[MockCMK, CredmarkAccessKey, CredmarkAccessProvider]> => {
     const mockCmkFactory = await ethers.getContractFactory("MockCMK");
@@ -32,8 +32,8 @@ describe("Credmark Access Provider", () => {
       _cmk.address,
       credmarkDao.address,
       cmkFeePerSec,
-      liquidatorRewardPercent,
-      stakedCmkSweepPercent
+      liquidatorRewardBp,
+      stakedCmkSweepShareBp
     )) as CredmarkAccessKey;
 
     const credmarkAccessProviderFactory = await ethers.getContractFactory("CredmarkAccessProvider");
