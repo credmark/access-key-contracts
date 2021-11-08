@@ -84,10 +84,6 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         emit StakedCmkSweepShareChanged(stakedCmkSweepShareBp);
     }
 
-    function approveCmkForSCmk(uint256 cmkAmount) external override onlyOwner {
-        credmark.approve(address(stakedCredmark), cmkAmount);
-    }
-
     function feesAccumulated(uint256 tokenId) public view override returns (uint256 aggFees) {
         uint256 mintedTimestamp = _mintedTimestamp[tokenId];
 
@@ -124,6 +120,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
 
     function addCmk(uint256 tokenId, uint256 cmkAmount) public override {
         require(_exists(tokenId), "No such token");
+        credmark.approve(address(stakedCredmark), cmkAmount);
         credmark.transferFrom(msg.sender, address(this), cmkAmount);
         uint256 sCmk = stakedCredmark.createShare(cmkAmount);
         _sharesLocked[tokenId] += sCmk;

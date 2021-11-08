@@ -126,8 +126,6 @@ describe("Credmark Access Key", () => {
 
   describe("#mint", () => {
     it("should mint nft", async () => {
-      await credmarkAccessKey.approveCmkForSCmk(1000);
-
       const initialMintAmount = BigNumber.from(1000);
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await expect(credmarkAccessKey.mint(initialMintAmount))
@@ -141,7 +139,6 @@ describe("Credmark Access Key", () => {
 
     it("should add cmk to token", async () => {
       const initialMintAmount = BigNumber.from(1000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount.mul(2));
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -152,8 +149,6 @@ describe("Credmark Access Key", () => {
 
     it("should accumulate fees with time", async () => {
       const initialMintAmount = BigNumber.from(100000000);
-
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -170,7 +165,6 @@ describe("Credmark Access Key", () => {
 
     it("should accumulate fees with time proportional to fee duration", async () => {
       const initialMintAmount = BigNumber.from(10);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
 
       const oneDay = 24 * 60 * 60;
@@ -202,8 +196,6 @@ describe("Credmark Access Key", () => {
 
   describe("#burn", () => {
     it("should burn nft", async () => {
-      await credmarkAccessKey.approveCmkForSCmk(1000);
-
       const initialMintAmount = BigNumber.from(1000);
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
@@ -214,8 +206,6 @@ describe("Credmark Access Key", () => {
     });
 
     it("should not burn nft if not owner", async () => {
-      await credmarkAccessKey.approveCmkForSCmk(1000);
-
       const initialMintAmount = BigNumber.from(1000);
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
@@ -231,8 +221,6 @@ describe("Credmark Access Key", () => {
   describe("#liquidate", () => {
     it("should liquidate by owner when defaulting fees", async () => {
       const initialMintAmount = BigNumber.from(1000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -258,8 +246,6 @@ describe("Credmark Access Key", () => {
 
     it("should liquidate by non owner when defaulting fees", async () => {
       const initialMintAmount = BigNumber.from(1000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -285,8 +271,6 @@ describe("Credmark Access Key", () => {
 
     it("should not liquidate when not defaulting fees", async () => {
       const initialMintAmount = BigNumber.from(100000000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
       await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -303,8 +287,6 @@ describe("Credmark Access Key", () => {
   describe("#sweep", () => {
     it("should sweep", async () => {
       const initialMintAmount = BigNumber.from(1000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
       await cmk.approve(credmarkAccessKey.address, initialMintAmount);
       await credmarkAccessKey.mint(initialMintAmount);
       const tokenId = BigNumber.from(0);
@@ -329,8 +311,6 @@ describe("Credmark Access Key", () => {
 
     it("should sweep nothing when minted token exists", async () => {
       const initialMintAmount = BigNumber.from(1000);
-      await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
       await cmk.approve(credmarkAccessKey.address, initialMintAmount);
       await credmarkAccessKey.mint(initialMintAmount);
 

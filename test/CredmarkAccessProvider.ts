@@ -50,8 +50,6 @@ describe("Credmark Access Provider", () => {
   });
 
   it("should authorize token owner", async () => {
-    await credmarkAccessKey.approveCmkForSCmk(1000);
-
     const initialMintAmount = BigNumber.from(1000);
     await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
     await expect(credmarkAccessKey.mint(initialMintAmount))
@@ -63,8 +61,6 @@ describe("Credmark Access Provider", () => {
   });
 
   it("should not authorize other than token owner", async () => {
-    await credmarkAccessKey.approveCmkForSCmk(1000);
-
     const initialMintAmount = BigNumber.from(1000);
     await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
     await expect(credmarkAccessKey.mint(initialMintAmount))
@@ -77,8 +73,6 @@ describe("Credmark Access Provider", () => {
 
   it("should not authorize token owner when liquidated", async () => {
     const initialMintAmount = BigNumber.from(1000);
-    await credmarkAccessKey.approveCmkForSCmk(initialMintAmount);
-
     await cmk.approve(credmarkAccessKey.address, initialMintAmount.mul(100));
     await credmarkAccessKey.mint(initialMintAmount);
     const tokenId = BigNumber.from(0);

@@ -11,8 +11,6 @@ interface ICredmarkAccessKey {
 
     function setStakedCmkSweepShare(uint256 _stakedCmkSweepShareBp) external;
 
-    function approveCmkForSCmk(uint256 cmkAmount) external;
-
     function feesAccumulated(uint256 tokenId) external view returns (uint256 aggFees);
 
     function cmkValue(uint256 tokenId) external view returns (uint256);
