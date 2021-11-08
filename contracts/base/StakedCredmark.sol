@@ -2,13 +2,11 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 import "./IStakedCredmark.sol";
 
 contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sCMK") {
-    using SafeMath for uint256;
     IERC20 public credmark;
 
     constructor(IERC20 _credmark) {
@@ -36,7 +34,7 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
         if (totalSupply() == 0 || cmkTotalSupply() == 0) {
             cmkAmount = amount;
         } else {
-            cmkAmount = amount.mul(cmkTotalSupply()).div(totalSupply());
+            cmkAmount = (amount * cmkTotalSupply()) / totalSupply();
         }
     }
 
@@ -44,12 +42,12 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
         if (totalSupply() == 0 || cmkTotalSupply() == 0) {
             sharesAmount = amount;
         } else {
-            sharesAmount = amount.mul(totalSupply()).div(cmkTotalSupply());
+            sharesAmount = (amount * totalSupply()) / cmkTotalSupply();
         }
     }
 
     function issueRewards() internal {
-        if (address(_rewardsPool) != address(0) && block.timestamp.sub(_rewardsPool.getLastEmitted()) > 24 hours) {
+        if (address(_rewardsPool) != address(0) && block.timestamp - _rewardsPool.getLastEmitted() > 24 hours) {
             _rewardsPool.issueRewards();
         }
     }

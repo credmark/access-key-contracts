@@ -4,7 +4,6 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -12,7 +11,6 @@ import "../base/IStakedCredmark.sol";
 import "./ICredmarkAccessKey.sol";
 
 contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Ownable {
-    using SafeMath for uint256;
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -101,7 +99,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
                 toTimestamp = fees[i].fromTimestamp;
             }
 
-            aggFees += fee.feePerSecond.mul(toTimestamp - fromTimestamp);
+            aggFees += fee.feePerSecond * (toTimestamp - fromTimestamp);
 
             if (fee.fromTimestamp <= mintedTimestamp) {
                 break;
@@ -142,7 +140,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         uint256 _cmkValue = cmkValue(tokenId);
         burnInternal(tokenId);
 
-        uint256 liquidatorReward = _cmkValue.mul(liquidatorRewardPercent).div(100);
+        uint256 liquidatorReward = (_cmkValue * liquidatorRewardPercent) / 100;
         if (liquidatorReward > 0) {
             credmark.transfer(msg.sender, liquidatorReward);
         }
@@ -150,7 +148,7 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
     }
 
     function sweep() external override {
-        uint256 cmkToSCmk = credmark.balanceOf(address(this)).mul(stakedCmkSweepPercent).div(100);
+        uint256 cmkToSCmk = (credmark.balanceOf(address(this)) * stakedCmkSweepPercent) / 100;
         if (cmkToSCmk > 0) {
             credmark.transfer(address(stakedCredmark), cmkToSCmk);
         }
