@@ -239,9 +239,7 @@ describe("Credmark Access Key", () => {
       expect(await credmarkAccessKey.balanceOf(wallet.address)).to.be.equal(BigNumber.from(0));
 
       const cmkBalanceAfter = await cmk.balanceOf(wallet.address);
-      expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(
-        initialMintAmount.mul(liquidatorRewardBp).div(10000)
-      );
+      expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(initialMintAmount.mul(liquidatorRewardBp).div(10000));
     });
 
     it("should liquidate by non owner when defaulting fees", async () => {
@@ -264,9 +262,7 @@ describe("Credmark Access Key", () => {
       expect(await credmarkAccessKey.balanceOf(wallet.address)).to.be.equal(BigNumber.from(0));
 
       const cmkBalanceAfter = await cmk.balanceOf(otherWallet.address);
-      expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(
-        initialMintAmount.mul(liquidatorRewardBp).div(10000)
-      );
+      expect(cmkBalanceAfter.sub(cmkBalanceBefore)).to.be.equal(initialMintAmount.mul(liquidatorRewardBp).div(10000));
     });
 
     it("should not liquidate when not defaulting fees", async () => {
@@ -303,7 +299,9 @@ describe("Credmark Access Key", () => {
           initialMintAmount.mul(BigNumber.from(10000).sub(stakedCmkSweepShareBp)).div(10000)
         );
 
-      expect(await cmk.balanceOf(stakedCmk.address)).to.be.equal(initialMintAmount.mul(stakedCmkSweepShareBp).div(10000));
+      expect(await cmk.balanceOf(stakedCmk.address)).to.be.equal(
+        initialMintAmount.mul(stakedCmkSweepShareBp).div(10000)
+      );
       expect(await cmk.balanceOf(credmarkDao.address)).to.be.equal(
         initialMintAmount.mul(BigNumber.from(10000).sub(stakedCmkSweepShareBp)).div(10000)
       );
