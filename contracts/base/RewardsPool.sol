@@ -2,12 +2,10 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 
 contract RewardsPool is IRewardsPool, Ownable {
-    using SafeMath for uint256;
     IERC20 public stakedCredmark;
     IERC20 public credmark;
 
@@ -47,6 +45,10 @@ contract RewardsPool is IRewardsPool, Ownable {
         endTime = _endTime;
     }
 
+    function getLastEmitted() external view override returns (uint256) {
+        return lastEmitted;
+    }
+
     function issueRewards() public override hasStarted {
         uint256 rewardsAmount = unissuedRewards();
         if (rewardsAmount == 0) {
@@ -68,7 +70,7 @@ contract RewardsPool is IRewardsPool, Ownable {
         }
 
         uint256 balance = credmark.balanceOf(address(this));
-        uint256 rewardsAmount = balance.mul(lastRewardTime - lastEmitted).div(endTime - lastEmitted);
+        uint256 rewardsAmount = (balance * (lastRewardTime - lastEmitted)) / (endTime - lastEmitted);
         return rewardsAmount;
     }
 }

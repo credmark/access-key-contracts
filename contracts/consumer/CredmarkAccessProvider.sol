@@ -11,7 +11,8 @@ contract CredmarkAccessProvider {
     }
 
     function authorize(address authenticatedAddress, uint256 tokenId) external view returns (bool authorized) {
-        authorized = authenticatedAddress == dataAccess.ownerOf(tokenId) && ( dataAccess.feesAccumulated(tokenId) < dataAccess.cmkValue(tokenId) );
+        authorized =
+            authenticatedAddress == dataAccess.ownerOf(tokenId) &&
+            (dataAccess.feesAccumulated(tokenId) < dataAccess.cmkValue(tokenId));
     }
-    
 }
