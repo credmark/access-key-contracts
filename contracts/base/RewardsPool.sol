@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 
@@ -9,7 +9,7 @@ contract RewardsPool is IRewardsPool, Ownable {
     IERC20 public stakedCredmark;
     IERC20 public credmark;
 
-    uint256 public lastEmitted;
+    uint256 public lastRewardTime;
     uint256 public endTime;
 
     bool public started;
@@ -30,7 +30,7 @@ contract RewardsPool is IRewardsPool, Ownable {
         require(!started, "Contract Already Started");
         require(_endTime > block.timestamp, "End time is not in future");
 
-        lastEmitted = block.timestamp;
+        lastRewardTime = block.timestamp;
         endTime = _endTime;
         started = true;
     }
@@ -45,32 +45,36 @@ contract RewardsPool is IRewardsPool, Ownable {
         endTime = _endTime;
     }
 
-    function getLastEmitted() external view override returns (uint256) {
-        return lastEmitted;
+    function getLastRewardTime() external view override returns (uint256) {
+        return lastRewardTime;
     }
 
     function issueRewards() public override hasStarted {
         uint256 rewardsAmount = unissuedRewards();
+
+        lastRewardTime = block.timestamp;
+
         if (rewardsAmount == 0) {
             return;
         }
+
         credmark.transfer(address(stakedCredmark), rewardsAmount);
-        lastEmitted = block.timestamp;
+    
         emit RewardsIssued(rewardsAmount);
     }
 
     function unissuedRewards() public view override hasStarted returns (uint256) {
-        if (endTime <= lastEmitted) {
+        if (endTime <= lastRewardTime) {
             return 0;
         }
 
-        uint256 lastRewardTime = block.timestamp;
+        uint256 nowOrEndTime = block.timestamp;
         if (block.timestamp > endTime) {
-            lastRewardTime = endTime;
+            nowOrEndTime = endTime;
         }
 
         uint256 balance = credmark.balanceOf(address(this));
-        uint256 rewardsAmount = (balance * (lastRewardTime - lastEmitted)) / (endTime - lastEmitted);
+        uint256 rewardsAmount = (balance * (nowOrEndTime - lastRewardTime)) / (endTime - lastRewardTime);
         return rewardsAmount;
     }
 }
