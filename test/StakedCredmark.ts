@@ -32,7 +32,7 @@ describe("Staked Credmark", () => {
   describe("#cmkSupply", () => {
     it("should assign initial cmk supply", async () => {
       await cmk.transfer(stakedCmk.address, 1000);
-      expect(await stakedCmk.cmkTotalSupply()).to.equal(BigNumber.from(1000));
+      expect(await stakedCmk.cmkBalance()).to.equal(BigNumber.from(1000));
     });
 
     it("should increase sCmk value on cmk infusion", async () => {
