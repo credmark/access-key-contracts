@@ -18,11 +18,14 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     mapping(address => uint256) private _shareBalances;
     uint256 private _shareTotalSupply;
 
+    uint32 private _lastIssuedRewards;
+    uint32 private constant REWARDS_PERIOD_S = 8 hours;
+
     function setRewardsPool(address rewardsPool) external override onlyOwner {
         _rewardsPool = IRewardsPool(rewardsPool);
     }
 
-    function cmkTotalSupply() public view override returns (uint256) {
+    function cmkBalance() public view override returns (uint256) {
         return credmark.balanceOf(address(this));
     }
 
@@ -31,23 +34,23 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     }
 
     function sharesToCmk(uint256 amount) public view override returns (uint256 cmkAmount) {
-        if (totalSupply() == 0 || cmkTotalSupply() == 0) {
+        if (totalSupply() == 0 || cmkBalance() == 0) {
             cmkAmount = amount;
         } else {
-            cmkAmount = (amount * cmkTotalSupply()) / totalSupply();
+            cmkAmount = (amount * cmkBalance()) / totalSupply();
         }
     }
 
     function cmkToShares(uint256 amount) public view override returns (uint256 sharesAmount) {
-        if (totalSupply() == 0 || cmkTotalSupply() == 0) {
+        if (totalSupply() == 0 || cmkBalance() == 0) {
             sharesAmount = amount;
         } else {
-            sharesAmount = (amount * totalSupply()) / cmkTotalSupply();
+            sharesAmount = (amount * totalSupply()) / cmkBalance();
         }
     }
 
     function issueRewards() internal {
-        if (address(_rewardsPool) != address(0) && block.timestamp - _rewardsPool.getLastEmitted() > 24 hours) {
+        if (address(_rewardsPool) != address(0) && block.timestamp - _rewardsPool.getLastRewardTime() > REWARDS_PERIOD_S) {
             _rewardsPool.issueRewards();
         }
     }

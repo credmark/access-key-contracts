@@ -2,7 +2,7 @@
 pragma solidity ^0.8.2;
 
 interface IRewardsPool {
-    function getLastEmitted() external view returns (uint256);
+    function getLastRewardTime() external view returns (uint256);
 
     function issueRewards() external;
 

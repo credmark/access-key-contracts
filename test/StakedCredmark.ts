@@ -32,7 +32,7 @@ describe("Staked Credmark", () => {
   describe("#cmkSupply", () => {
     it("should assign initial cmk supply", async () => {
       await cmk.transfer(stakedCmk.address, 1000);
-      expect(await stakedCmk.cmkTotalSupply()).to.equal(BigNumber.from(1000));
+      expect(await stakedCmk.cmkBalance()).to.equal(BigNumber.from(1000));
     });
 
     it("should increase sCmk value on cmk infusion", async () => {
@@ -100,7 +100,7 @@ describe("Staked Credmark", () => {
       await expect(stakedCmk.removeShare(1000)).to.emit(rewardsPool, "RewardsIssued");
     });
 
-    it("should issue rewards once every 24 hours", async () => {
+    it("should issue rewards once every 8 hours", async () => {
       const rewardsPoolFactory = await ethers.getContractFactory("RewardsPool");
       const rewardsPool = (await rewardsPoolFactory.deploy(cmk.address, stakedCmk.address)) as RewardsPool;
       await stakedCmk.setRewardsPool(rewardsPool.address);
@@ -121,7 +121,7 @@ describe("Staked Credmark", () => {
       await expect(stakedCmk.removeShare(100)).to.emit(rewardsPool, "RewardsIssued");
       await expect(stakedCmk.removeShare(100)).to.not.emit(rewardsPool, "RewardsIssued");
 
-      await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
+      await ethers.provider.send("evm_increaseTime", [8 * 60 * 60]);
       await ethers.provider.send("evm_mine", []);
       await expect(stakedCmk.removeShare(100)).to.emit(rewardsPool, "RewardsIssued");
     });

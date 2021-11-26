@@ -141,7 +141,7 @@ describe("Rewards Pool", () => {
       expect(await cmk.balanceOf(stakedCmk.address)).to.be.equal(BigNumber.from(0));
     });
 
-    it("should update lastEmitted on issue rewards", async () => {
+    it("should issue rewards proportional to time passed", async () => {
       await cmk.transfer(rewardsPool.address, 10000000);
 
       await rewardsPool.start(now.add(sevenDays).add(sevenDays));

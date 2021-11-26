@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 interface IStakedCredmark {
     function setRewardsPool(address rewardsPool) external;
 
-    function cmkTotalSupply() external view returns (uint256);
+    function cmkBalance() external view returns (uint256);
 
     function cmkBalanceOf(address account) external view returns (uint256);
 
