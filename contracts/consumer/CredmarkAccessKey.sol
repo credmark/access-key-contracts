@@ -2,134 +2,195 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../base/IStakedCredmark.sol";
+import "./ICredmarkAccessKey.sol";
 
-contract CredmarkAccessKey is ERC721, ERC721Enumerable, AccessControl {
-    using SafeMath for uint256;
+contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
-    Counters.Counter private _feeIdCounter;
 
     struct CredmarkAccessFee {
-        uint startTime;
-        uint endTime;
-        uint fee;
+        uint256 fromTimestamp;
+        uint256 feePerSecond;
     }
 
-    mapping (uint => CredmarkAccessFee) public _fees;
+    event FeeChanged(uint256 feeAmount);
+    event LiquidatorRewardChanged(uint256 liquidatorRewardBp);
+    event StakedCmkSweepShareChanged(uint256 stakedCmkShareBp);
+    event AccessKeyMinted(uint256 tokenId);
+    event AccessKeyBurned(uint256 tokenId);
+    event AccessKeyLiquidated(uint256 tokenId, address liquidator, uint256 reward);
+    event CredmarkAddedToKey(uint256 tokenId, uint256 amount);
+    event Sweeped(uint256 cmkToSCmk, uint256 cmkToDao);
+
+    CredmarkAccessFee[] public fees;
+    uint256 public liquidatorRewardBp;
+    uint256 public stakedCmkSweepShareBp;
 
     IStakedCredmark public stakedCredmark;
-    address private credmarkDAO;
+    address public credmarkDAO;
     IERC20 public credmark;
 
-    mapping (uint => uint) private _mintedTimestamp;
-    mapping (uint => uint) private _sharesLocked;
+    mapping(uint256 => uint256) private _mintedTimestamp;
+    mapping(uint256 => uint256) private _sharesLocked;
 
-    constructor(IStakedCredmark _stakedCredmark, IERC20 _credmark, address _credmarkDAO) ERC721("CredmarkAccessKey", "accessCMK") {
+    constructor(
+        IStakedCredmark _stakedCredmark,
+        IERC20 _credmark,
+        address _credmarkDAO,
+        uint256 _feePerSecond,
+        uint256 _liquidatorRewardBp,
+        uint256 _stakedCmkSweepShareBp
+    ) ERC721("CredmarkAccessKey", "accessCMK") {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
         credmarkDAO = _credmarkDAO;
+
+        fees.push(CredmarkAccessFee(block.timestamp, _feePerSecond));
+        liquidatorRewardBp = _liquidatorRewardBp;
+        stakedCmkSweepShareBp = _stakedCmkSweepShareBp;
+    }
+
+    modifier isLiquidateable(uint256 tokenId) {
+        require(feesAccumulated(tokenId) >= cmkValue(tokenId), "Not liquidiateable");
+        _;
     }
 
     // Configuration Functions
-
-    function setFee(uint _feeAmount) public {
-        _fees[_feeIdCounter.current()] = CredmarkAccessFee(block.timestamp,_feeAmount,0);
-        if (_feeIdCounter.current() > 0){
-            _fees[_feeIdCounter.current() - 1].endTime = block.timestamp;
-        }
-        _feeIdCounter.increment();
+    function setFee(uint256 feePerSecond) external override onlyOwner {
+        fees.push(CredmarkAccessFee(block.timestamp, feePerSecond));
+        emit FeeChanged(feePerSecond);
     }
 
-    function feesAccumulated(uint tokenId) public view returns (uint aggFees){
+    function getFeesCount() external view override returns (uint256) {
+        return fees.length;
+    }
 
-        uint mintedTimestamp = _mintedTimestamp[tokenId];
-        for (uint i =0; i<_feeIdCounter.current(); i++){
-            if(_fees[i].endTime == 0 || mintedTimestamp < _fees[i].endTime){
-                uint start = max(mintedTimestamp, _fees[i].startTime);
-                uint end = block.timestamp;
-                if(_fees[i].endTime > 0) {
-                    end = _fees[i].endTime;
-                }
-                aggFees += _fees[i].fee.mul(end - start);
+    function setLiquidatorReward(uint256 _liquidatorRewardBp) external override onlyOwner {
+        require(_liquidatorRewardBp <= 10000, "Basis Point not in 0-10000 range");
+        liquidatorRewardBp = _liquidatorRewardBp;
+        emit LiquidatorRewardChanged(_liquidatorRewardBp);
+    }
+
+    function setStakedCmkSweepShare(uint256 _stakedCmkSweepShareBp) external override onlyOwner {
+        require(_stakedCmkSweepShareBp <= 10000, "Basis Point not in 0-10000 range");
+        stakedCmkSweepShareBp = _stakedCmkSweepShareBp;
+        emit StakedCmkSweepShareChanged(stakedCmkSweepShareBp);
+    }
+
+    function feesAccumulated(uint256 tokenId) public view override returns (uint256 aggFees) {
+        uint256 mintedTimestamp = _mintedTimestamp[tokenId];
+
+        for (uint256 i = fees.length; i > 0; i--) {
+            CredmarkAccessFee storage fee = fees[i - 1];
+            uint256 fromTimestamp = max(mintedTimestamp, fee.fromTimestamp);
+            uint256 toTimestamp = block.timestamp;
+            if (i < fees.length) {
+                toTimestamp = fees[i].fromTimestamp;
+            }
+
+            aggFees += fee.feePerSecond * (toTimestamp - fromTimestamp);
+
+            if (fee.fromTimestamp <= mintedTimestamp) {
+                break;
             }
         }
-
-        if (aggFees > cmkValue(tokenId)){
-            aggFees = cmkValue(tokenId);
-        }
     }
 
-    function cmkValue(uint tokenId) public view returns (uint) {
+    function cmkValue(uint256 tokenId) public view override returns (uint256) {
         return stakedCredmark.sharesToCmk(_sharesLocked[tokenId]);
     }
 
-
     // User Functions
-    function mint(uint _cmkAmount) public returns(uint tokenId) {
+    function mint(uint256 cmkAmount) external override returns (uint256 tokenId) {
         tokenId = _tokenIdCounter.current();
-        addCmk(tokenId, _cmkAmount);
         _mintedTimestamp[tokenId] = block.timestamp;
         _safeMint(msg.sender, tokenId);
+        addCmk(tokenId, cmkAmount);
         _tokenIdCounter.increment();
+
+        emit AccessKeyMinted(tokenId);
     }
 
-    function addCmk(uint tokenId, uint _cmkAmount) public {
-        credmark.transferFrom(msg.sender, address(this), _cmkAmount);
-        uint sCmk = stakedCredmark.createShare(_cmkAmount);
+    function addCmk(uint256 tokenId, uint256 cmkAmount) public override {
+        require(_exists(tokenId), "No such token");
+        credmark.approve(address(stakedCredmark), cmkAmount);
+        credmark.transferFrom(msg.sender, address(this), cmkAmount);
+        uint256 sCmk = stakedCredmark.createShare(cmkAmount);
         _sharesLocked[tokenId] += sCmk;
+
+        emit CredmarkAddedToKey(tokenId, cmkAmount);
     }
 
-    function burn(uint tokenId) public {
-        require(msg.sender == ownerOf(tokenId), "Only the NFT owner can burn their NFT");
-        uint fee = feesAccumulated(tokenId);
+    function burn(uint256 tokenId) external override {
+        require(msg.sender == ownerOf(tokenId), "Only owner can burn their NFT");
+        burnInternal(tokenId);
+    }
+
+    function liquidate(uint256 tokenId) external override isLiquidateable(tokenId) {
+        uint256 _cmkValue = cmkValue(tokenId);
+        burnInternal(tokenId);
+
+        uint256 liquidatorReward = (_cmkValue * liquidatorRewardBp) / 10000;
+        if (liquidatorReward > 0) {
+            credmark.transfer(msg.sender, liquidatorReward);
+        }
+        emit AccessKeyLiquidated(tokenId, msg.sender, liquidatorReward);
+    }
+
+    function sweep() external override {
+        uint256 cmkToSCmk = (credmark.balanceOf(address(this)) * stakedCmkSweepShareBp) / 10000;
+        if (cmkToSCmk > 0) {
+            credmark.transfer(address(stakedCredmark), cmkToSCmk);
+        }
+
+        uint256 cmkToDao = credmark.balanceOf(address(this));
+        if (cmkToDao > 0) {
+            credmark.transfer(credmarkDAO, cmkToDao);
+        }
+
+        emit Sweeped(cmkToSCmk, cmkToDao);
+    }
+
+    function burnInternal(uint256 tokenId) internal {
+        uint256 fee = feesAccumulated(tokenId);
+
+        if (feesAccumulated(tokenId) > cmkValue(tokenId)) {
+            fee = cmkValue(tokenId);
+        }
+
         stakedCredmark.removeShare(_sharesLocked[tokenId]);
-        uint returned = cmkValue(tokenId) - fee;
-        credmark.transfer(msg.sender, returned);
-        credmark.transfer(address(stakedCredmark), fee.div(2));
-        credmark.transfer(credmarkDAO, fee.div(2));
+        uint256 returned = cmkValue(tokenId) - fee;
+        if (returned > 0) {
+            credmark.transfer(ownerOf(tokenId), returned);
+        }
+
+        _sharesLocked[tokenId] = 0;
         _burn(tokenId);
+
+        emit AccessKeyBurned(tokenId);
     }
 
-    // Liquidation Functions
-    function isLiquidateable(uint tokenId) public view returns (bool){
-        return feesAccumulated(tokenId) >= cmkValue(tokenId);
-    }
-
-    function liquidate(uint tokenId) public {
-        require(isLiquidateable(tokenId), "Not Insolvent");
-        uint cmkAmount = cmkValue(tokenId);
-        stakedCredmark.removeShare(_sharesLocked[tokenId]);
-        credmark.transfer(address(stakedCredmark), cmkAmount.div(2));
-        credmark.transfer(credmarkDAO, cmkAmount.div(2));
-        _burn(tokenId);
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
-    function max(uint a, uint b) pure internal returns (uint) {
-        if (a>b) {
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a > b) {
             return a;
         }
         return b;

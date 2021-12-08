@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity >=0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
@@ -16,7 +16,7 @@ contract MockCMK is ERC20, ERC20Burnable, ERC20Snapshot, AccessControl, Pausable
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(SNAPSHOT_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
-        _mint(msg.sender, 100000000 * 10 ** decimals());
+        _mint(msg.sender, 100000000 * 10**decimals());
     }
 
     function snapshot() public {
@@ -34,11 +34,11 @@ contract MockCMK is ERC20, ERC20Burnable, ERC20Snapshot, AccessControl, Pausable
         _unpause();
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override(ERC20, ERC20Snapshot)
-    {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Snapshot) whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
     }
 }
