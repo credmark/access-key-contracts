@@ -8,7 +8,8 @@
   },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "test:gas": "REPORT_GAS=true hardhat test"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.2.0",
     "hardhat": "^2.6.7",
+    "hardhat-gas-reporter": "^1.0.4",
     "prettier": "^2.4.1",
     "prettier-plugin-solidity": "^1.0.0-beta.18",
     "solhint": "^3.3.6",

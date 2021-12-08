@@ -22,4 +22,5 @@ Environment variables can be passed via `.env` file ([dotenv](https://www.npmjs.
 
 - `npm run compile` -> Compiles all contracts to generates ABIs and typescript types
 - `npm test` -> Runs all tests in test/ directory
+- `npm run test:gas` -> Runs all tests in test/ directory and displays gas usage
 - `npx hardhat run scripts/deployAll.ts --network <networkName>` -> Deploys all contracts

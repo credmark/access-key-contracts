@@ -1,9 +1,13 @@
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
+import "hardhat-gas-reporter"
 import "dotenv/config";
 
 export default {
+  gasReporter: {
+    enabled: (process.env.REPORT_GAS) ? true : false
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
