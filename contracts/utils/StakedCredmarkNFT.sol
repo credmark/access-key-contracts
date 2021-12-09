@@ -26,7 +26,7 @@ contract StakedCredmarkNFT is ERC721, ERC721Enumerable, AccessControl {
     bool public canAdd;
     bool public canRemove;
 
-    constructor(StakedCredmark _stakedCredmark, IERC20 _credmark) ERC721("StakedCredmarkNFT", "sCMKnft") {
+    constructor(StakedCredmark _stakedCredmark, IERC20 _credmark) ERC721("StakedCredmarkNFT", "xCMKnft") {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
         credmark.approve(address(stakedCredmark), 1000000000000000000000000);
@@ -44,35 +44,35 @@ contract StakedCredmarkNFT is ERC721, ERC721Enumerable, AccessControl {
     }
 
     function burn(uint256 id) public {
-        remove(id, sCmkValueOf(id));
+        remove(id, xCmkValueOf(id));
         _burn(id);
     }
 
     function add(uint256 _id, uint256 _cmkAmount) public {
         credmark.transferFrom(msg.sender, address(this), _cmkAmount);
-        uint256 nftTotalSCmkBalance = stakedCredmark.balanceOf(address(this));
-        uint256 sCMKcreated = stakedCredmark.createShare(_cmkAmount - mintFeeCmk);
+        uint256 nftTotalXCmkBalance = stakedCredmark.balanceOf(address(this));
+        uint256 xCMKcreated = stakedCredmark.createShare(_cmkAmount - mintFeeCmk);
 
-        if (nftTotalSCmkBalance == 0) {
-            nftValue[_id] = sCMKcreated;
+        if (nftTotalXCmkBalance == 0) {
+            nftValue[_id] = xCMKcreated;
         } else {
-            nftValue[_id] = (sCMKcreated * nftTotalValue) / nftTotalSCmkBalance;
+            nftValue[_id] = (xCMKcreated * nftTotalValue) / nftTotalXCmkBalance;
         }
 
-        nftTotalValue += sCMKcreated;
+        nftTotalValue += xCMKcreated;
     }
 
-    function remove(uint256 _id, uint256 _sCmkAmount) public {
-        uint256 sCmkValue = sCmkValueOf(_id);
-        require(_sCmkAmount <= sCmkValue, "Not Enough sCMK in NFT");
-        stakedCredmark.transfer(msg.sender, sCmkValue);
+    function remove(uint256 _id, uint256 _xCmkAmount) public {
+        uint256 xCmkValue = xCmkValueOf(_id);
+        require(_xCmkAmount <= xCmkValue, "Not Enough xCMK in NFT");
+        stakedCredmark.transfer(msg.sender, xCmkValue);
         uint256 oldNftValue = nftValue[_id];
-        nftValue[_id] = (oldNftValue * (sCmkValue - _sCmkAmount)) / sCmkValue;
+        nftValue[_id] = (oldNftValue * (xCmkValue - _xCmkAmount)) / xCmkValue;
         nftTotalValue = nftTotalValue - oldNftValue + nftValue[_id];
     }
 
-    function sCmkValueOf(uint256 _id) public view returns (uint256 sCmkValue) {
-        sCmkValue = (nftValue[_id] * stakedCredmark.balanceOf(address(this))) / nftTotalValue;
+    function xCmkValueOf(uint256 _id) public view returns (uint256 xCmkValue) {
+        xCmkValue = (nftValue[_id] * stakedCredmark.balanceOf(address(this))) / nftTotalValue;
     }
 
     function _beforeTokenTransfer(

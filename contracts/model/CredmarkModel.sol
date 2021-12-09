@@ -80,8 +80,8 @@ contract CredmarkModel is ERC721, ERC721Enumerable, AccessControl {
 
     function addCmk(uint256 tokenId, uint256 cmkAmount) public tokenExists(tokenId) {
         credmark.transferFrom(msg.sender, address(this), cmkAmount);
-        uint256 sCmk = stakedCredmark.createShare(cmkAmount);
-        _sharesLocked[tokenId] += sCmk;
+        uint256 xCmk = stakedCredmark.createShare(cmkAmount);
+        _sharesLocked[tokenId] += xCmk;
 
         emit CredmarkAddedToModel(tokenId, cmkAmount);
     }
