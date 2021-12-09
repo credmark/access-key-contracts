@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 import "./IStakedCredmark.sol";
 
-contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sCMK") {
+contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "xCMK") {
     IERC20 public credmark;
 
     constructor(IERC20 _credmark) {
@@ -19,7 +19,7 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     uint256 private _shareTotalSupply;
 
     uint32 private _lastIssuedRewards;
-    uint32 private constant REWARDS_PERIOD_S = 8 hours;
+    uint32 private constant REWARDS_INTERVAL_S = 8 hours;
 
     function setRewardsPool(address rewardsPool) external override onlyOwner {
         _rewardsPool = IRewardsPool(rewardsPool);
@@ -50,15 +50,18 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "sC
     }
 
     function issueRewards() internal {
-        if (address(_rewardsPool) != address(0) && block.timestamp - _rewardsPool.getLastRewardTime() > REWARDS_PERIOD_S) {
+        if (
+            address(_rewardsPool) != address(0) &&
+            block.timestamp - _rewardsPool.getLastRewardTime() > REWARDS_INTERVAL_S
+        ) {
             _rewardsPool.issueRewards();
         }
     }
 
-    function createShare(uint256 _amount) external override returns (uint256 sCmk) {
+    function createShare(uint256 _amount) external override returns (uint256 xCmk) {
         issueRewards();
-        sCmk = cmkToShares(_amount);
-        _mint(msg.sender, sCmk);
+        xCmk = cmkToShares(_amount);
+        _mint(msg.sender, xCmk);
         credmark.transferFrom(msg.sender, address(this), _amount);
     }
 

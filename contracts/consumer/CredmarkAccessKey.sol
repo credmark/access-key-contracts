@@ -122,8 +122,8 @@ contract CredmarkAccessKey is ICredmarkAccessKey, ERC721, ERC721Enumerable, Owna
         require(_exists(tokenId), "No such token");
         credmark.approve(address(stakedCredmark), cmkAmount);
         credmark.transferFrom(msg.sender, address(this), cmkAmount);
-        uint256 sCmk = stakedCredmark.createShare(cmkAmount);
-        _sharesLocked[tokenId] += sCmk;
+        uint256 xCmk = stakedCredmark.createShare(cmkAmount);
+        _sharesLocked[tokenId] += xCmk;
 
         emit CredmarkAddedToKey(tokenId, cmkAmount);
     }
