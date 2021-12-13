@@ -6,8 +6,8 @@
 | --------------- | -------------------------------------------- |
 | Owner           | `0x16B57599b3C61Ca7A4B11e782105440760649549` |
 | Mock CMK        | `0x4C0E80B61277043AE06f2d0BdE523a3C0e00230C` |
-| Staked CMK      | `0xF12E77bEa5A4e67A704f5e6dc51C8f2beFFD264C` |
-| Rewards Pool    | `0x8c80C7aBb9E38842d74CEab9244a11d12986dBd4` |
+| Staked CMK      | `0xD6129eEB45164D8b576b4ACa3b21AeE2f5e5eDD5` |
+| Rewards Pool    | `0xA5D5C8035eD8E4b5aB21A914Da01D90F612AE961` |
 | Access Key      | `0xc71fAF7bA8d4C50bf5908cB0E8B07A1baD58E7b0` |
 | Access Provider | `0x9F4B17ad03A17Ea251626ecd1Ff2C794D6Cb3c4B` |
 
@@ -17,8 +17,8 @@
 | --------------- | -------------------------------------------- |
 | Owner           | `0x16B57599b3C61Ca7A4B11e782105440760649549` |
 | Mock CMK        | `0x66c924752E4Ab44a4926c2eB9C5b9818c3538a0A` |
-| Staked CMK      | `0x54f0a1b74fC4aCFf883713AF2d3CBb5789b73Afe` |
-| Rewards Pool    | `0x59EaF5A4EC552ecc301938a5E396666605fb1514` |
+| Staked CMK      | `0x45F5aF4eBdA4747518799364B912423a3CF8aa88` |
+| Rewards Pool    | `0x7AdEd4c929cb560fE75163d92CBDF8F65EC896f9` |
 | Access Key      | `0xb538197888fE8cA3B6C686C7975FA760caF442b3` |
 | Access Provider | `0xC6fA948CD7eafFfdA1ABc1EB8969e8f418FE39C1` |
 
