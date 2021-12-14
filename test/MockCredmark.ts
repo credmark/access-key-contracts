@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers, waffle } from 'hardhat';
-import { MockCMK } from '../typechain/MockCMK.d';
+import { MockCMK } from '../typechain';
 
 describe('Mock Credmark', () => {
   let cmk: MockCMK;
