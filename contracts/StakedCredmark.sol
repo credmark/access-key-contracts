@@ -4,8 +4,8 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IRewardsPool.sol";
-import "./IStakedCredmark.sol";
+import "./interfaces/IRewardsPool.sol";
+import "./interfaces/IStakedCredmark.sol";
 
 contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "xCMK") {
     IERC20 public credmark;

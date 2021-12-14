@@ -1,6 +1,6 @@
 # protocol-core-contracts
 
-The smart contracts for allowing anonymous, scalable API and Infrastructure access on-chain
+The smart contracts for staking CMK and rewarding
 
 ## Deployed addresses
 
@@ -23,4 +23,3 @@ One of the following is required when deploying contracts
 - `npm run compile` -> Compiles all contracts to generates ABIs and typescript types
 - `npm test` -> Runs all tests in test/ directory
 - `npm run test:gas` -> Runs all tests in test/ directory and displays gas usage
-- `npx hardhat run scripts/deployAll.ts --network <networkName>` -> Deploys all contracts

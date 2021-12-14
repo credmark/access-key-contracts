@@ -1,7 +1,7 @@
 {
   "name": "protocol-core-contracts",
   "version": "1.0.0",
-  "description": "The smart contracts for allowing anonymous, scalable API and Infrastructure access on-chain",
+  "description": "The smart contracts for staking CMK and rewarding",
   "main": "hardhat.config.ts",
   "directories": {
     "test": "test"
