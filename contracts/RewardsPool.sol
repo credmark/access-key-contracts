@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IRewardsPool.sol";
+import "./interfaces/IRewardsPool.sol";
 
 contract RewardsPool is IRewardsPool, Ownable {
     IERC20 public stakedCredmark;
