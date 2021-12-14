@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 
@@ -14,6 +15,8 @@ contract RewardsPool is IRewardsPool, Ownable {
 
     bool public started;
 
+    event PoolStarted(uint256 endTime);
+    event EndTimeChanged(uint256 endTime);
     event RewardsIssued(uint256 amount);
 
     modifier hasStarted() {
@@ -26,23 +29,27 @@ contract RewardsPool is IRewardsPool, Ownable {
         credmark = _credmark;
     }
 
-    function start(uint256 _endTime) external onlyOwner {
+    function start(uint256 poolEndTime) external onlyOwner {
         require(!started, "Contract Already Started");
-        require(_endTime > block.timestamp, "End time is not in future");
+        require(poolEndTime > block.timestamp, "End time is not in future");
 
         lastRewardTime = block.timestamp;
-        endTime = _endTime;
+        endTime = poolEndTime;
         started = true;
+
+        emit PoolStarted(endTime);
     }
 
-    function setEndTime(uint256 _endTime) external onlyOwner {
-        require(_endTime > block.timestamp, "End time is not in future");
+    function setEndTime(uint256 poolEndTime) external onlyOwner {
+        require(poolEndTime > block.timestamp, "End time is not in future");
 
         if (endTime > 0) {
             issueRewards();
         }
 
-        endTime = _endTime;
+        endTime = poolEndTime;
+
+        emit EndTimeChanged(endTime);
     }
 
     function getLastRewardTime() external view override returns (uint256) {
@@ -54,13 +61,10 @@ contract RewardsPool is IRewardsPool, Ownable {
 
         lastRewardTime = block.timestamp;
 
-        if (rewardsAmount == 0) {
-            return;
+        if (rewardsAmount > 0) {
+            SafeERC20.safeTransfer(credmark, address(stakedCredmark), rewardsAmount);
+            emit RewardsIssued(rewardsAmount);
         }
-
-        credmark.transfer(address(stakedCredmark), rewardsAmount);
-    
-        emit RewardsIssued(rewardsAmount);
     }
 
     function unissuedRewards() public view override hasStarted returns (uint256) {
