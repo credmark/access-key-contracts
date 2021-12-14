@@ -2,23 +2,19 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRewardsPool.sol";
 import "./IStakedCredmark.sol";
 
 contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "xCMK") {
     IERC20 public credmark;
+    IRewardsPool private _rewardsPool;
 
     constructor(IERC20 _credmark) {
         credmark = _credmark;
     }
 
-    IRewardsPool private _rewardsPool;
-
-    mapping(address => uint256) private _shareBalances;
-    uint256 private _shareTotalSupply;
-
-    uint32 private _lastIssuedRewards;
     uint32 private constant REWARDS_INTERVAL_S = 8 hours;
 
     function setRewardsPool(address rewardsPool) external override onlyOwner {
@@ -29,23 +25,23 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "xC
         return credmark.balanceOf(address(this));
     }
 
-    function cmkBalanceOf(address account) public view override returns (uint256) {
+    function cmkBalanceOf(address account) external view override returns (uint256) {
         return sharesToCmk(balanceOf(account));
     }
 
-    function sharesToCmk(uint256 amount) public view override returns (uint256 cmkAmount) {
-        if (totalSupply() == 0 || cmkBalance() == 0) {
-            cmkAmount = amount;
+    function sharesToCmk(uint256 sharesAmount) public view override returns (uint256 cmkAmount) {
+        if (totalSupply() > 0 && cmkBalance() > 0) {
+            cmkAmount = (sharesAmount * cmkBalance()) / totalSupply();
         } else {
-            cmkAmount = (amount * cmkBalance()) / totalSupply();
+            cmkAmount = sharesAmount;
         }
     }
 
-    function cmkToShares(uint256 amount) public view override returns (uint256 sharesAmount) {
-        if (totalSupply() == 0 || cmkBalance() == 0) {
-            sharesAmount = amount;
+    function cmkToShares(uint256 cmkAmount) public view override returns (uint256 sharesAmount) {
+        if (totalSupply() > 0 && cmkBalance() > 0) {
+            sharesAmount = (cmkAmount * totalSupply()) / cmkBalance();
         } else {
-            sharesAmount = (amount * totalSupply()) / cmkBalance();
+            sharesAmount = cmkAmount;
         }
     }
 
@@ -58,17 +54,17 @@ contract StakedCredmark is IStakedCredmark, Ownable, ERC20("StakedCredmark", "xC
         }
     }
 
-    function createShare(uint256 _amount) external override returns (uint256 xCmk) {
+    function createShare(uint256 cmkAmount) external override returns (uint256 sharesAmount) {
         issueRewards();
-        xCmk = cmkToShares(_amount);
-        _mint(msg.sender, xCmk);
-        credmark.transferFrom(msg.sender, address(this), _amount);
+        sharesAmount = cmkToShares(cmkAmount);
+        _mint(msg.sender, sharesAmount);
+        SafeERC20.safeTransferFrom(credmark, msg.sender, address(this), cmkAmount);
     }
 
-    function removeShare(uint256 _share) external override {
+    function removeShare(uint256 sharesAmount) external override {
         issueRewards();
-        uint256 cmk = sharesToCmk(_share);
-        _burn(msg.sender, _share);
-        credmark.transfer(msg.sender, cmk);
+        uint256 cmkAmount = sharesToCmk(sharesAmount);
+        _burn(msg.sender, sharesAmount);
+        SafeERC20.safeTransfer(credmark, msg.sender, cmkAmount);
     }
 }

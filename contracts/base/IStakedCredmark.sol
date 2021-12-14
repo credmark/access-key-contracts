@@ -8,11 +8,11 @@ interface IStakedCredmark {
 
     function cmkBalanceOf(address account) external view returns (uint256);
 
-    function sharesToCmk(uint256 amount) external view returns (uint256 cmkAmount);
+    function sharesToCmk(uint256 sharesAmount) external view returns (uint256 cmkAmount);
 
-    function cmkToShares(uint256 amount) external view returns (uint256 sharesAmount);
+    function cmkToShares(uint256 cmkAmount) external view returns (uint256 sharesAmount);
 
-    function createShare(uint256 _amount) external returns (uint256);
+    function createShare(uint256 cmkAmount) external returns (uint256);
 
-    function removeShare(uint256 _share) external;
+    function removeShare(uint256 sharesAmount) external;
 }
