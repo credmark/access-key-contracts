@@ -59,6 +59,22 @@ describe('Staked Credmark', () => {
       expect(await stakedCmk.totalSupply()).to.equal(BigNumber.from(100));
     });
 
+    it('should create share if rewards pool set but not started', async () => {
+      const rewardsPoolFactory = await ethers.getContractFactory('RewardsPool');
+      const rewardsPool = (await rewardsPoolFactory.deploy(
+        cmk.address,
+        stakedCmk.address
+      )) as RewardsPool;
+      await stakedCmk.setRewardsPool(rewardsPool.address);
+
+      await cmk.approve(stakedCmk.address, 100);
+      await stakedCmk.createShare(100);
+      expect(await stakedCmk.balanceOf(wallet.address)).to.equal(
+        BigNumber.from(100)
+      );
+      expect(await stakedCmk.totalSupply()).to.equal(BigNumber.from(100));
+    });
+
     it('should not create share if low cmk balance', async () => {
       await cmk
         .connect(secondWallet)

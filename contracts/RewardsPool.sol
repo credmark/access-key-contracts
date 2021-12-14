@@ -19,11 +19,6 @@ contract RewardsPool is IRewardsPool, Ownable {
     event EndTimeChanged(uint256 endTime);
     event RewardsIssued(uint256 amount);
 
-    modifier hasStarted() {
-        require(started, "Pool has not started");
-        _;
-    }
-
     constructor(IERC20 _credmark, IERC20 _stakedCredmark) {
         stakedCredmark = _stakedCredmark;
         credmark = _credmark;
@@ -56,7 +51,11 @@ contract RewardsPool is IRewardsPool, Ownable {
         return lastRewardTime;
     }
 
-    function issueRewards() public override hasStarted {
+    function issueRewards() public override {
+        if (!started) {
+            return;
+        }
+
         uint256 rewardsAmount = unissuedRewards();
 
         lastRewardTime = block.timestamp;
@@ -67,8 +66,8 @@ contract RewardsPool is IRewardsPool, Ownable {
         }
     }
 
-    function unissuedRewards() public view override hasStarted returns (uint256) {
-        if (endTime <= lastRewardTime) {
+    function unissuedRewards() public view override returns (uint256) {
+        if (!started || endTime <= lastRewardTime) {
             return 0;
         }
 

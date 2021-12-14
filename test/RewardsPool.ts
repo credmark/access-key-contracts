@@ -62,8 +62,9 @@ describe('Rewards Pool', () => {
     });
 
     it('should not issue rewards when not started', async () => {
-      await expect(rewardsPool.issueRewards()).to.be.revertedWith(
-        'Pool has not started'
+      await expect(rewardsPool.issueRewards()).to.not.emit(
+        rewardsPool,
+        'RewardsIssued'
       );
     });
 
@@ -105,6 +106,12 @@ describe('Rewards Pool', () => {
   });
 
   describe('#unissuedRewards', () => {
+    it('should be no unissued rewards if pool not started', async () => {
+      expect(await rewardsPool.unissuedRewards()).to.be.equal(
+        BigNumber.from(0)
+      );
+    });
+
     it('should increase unissued rewards with time', async () => {
       await cmk.transfer(rewardsPool.address, 10000000);
 
