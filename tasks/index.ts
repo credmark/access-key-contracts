@@ -76,3 +76,72 @@ task('rewards-pool:start', 'Start rewards pool')
 
     await rewardsPoolContract.start(endTime);
   });
+
+task('rewards-pool:unissued-rewards', 'Get unissued rewards')
+  .addParam('rewardsPool', 'Rewards Pool Address')
+  .setAction(async function (
+    { rewardsPool }: { rewardsPool: string },
+    { ethers }
+  ) {
+    const rewardsPoolContract = (await ethers.getContractAt(
+      'RewardsPool',
+      rewardsPool
+    )) as RewardsPool;
+
+    const unissuedRewards = await rewardsPoolContract.unissuedRewards();
+    console.log(unissuedRewards.toString());
+  });
+
+task('rewards-pool:issue-rewards', 'Issue rewards')
+  .addParam('rewardsPool', 'Rewards Pool Address')
+  .setAction(async function (
+    { rewardsPool }: { rewardsPool: string },
+    { ethers }
+  ) {
+    const rewardsPoolContract = (await ethers.getContractAt(
+      'RewardsPool',
+      rewardsPool
+    )) as RewardsPool;
+
+    const tx = await rewardsPoolContract.issueRewards();
+
+    console.log('Rewards issued transaction: ', tx.hash);
+  });
+
+task('rewards-pool:get-end-time', 'Get end Time')
+  .addParam('rewardsPool', 'Rewards Pool Address')
+  .setAction(async function (
+    { rewardsPool }: { rewardsPool: string },
+    { ethers }
+  ) {
+    const rewardsPoolContract = (await ethers.getContractAt(
+      'RewardsPool',
+      rewardsPool
+    )) as RewardsPool;
+
+    const endTimeUnix = await rewardsPoolContract.endTime();
+    const endTime = new Date(endTimeUnix.toNumber() * 1000);
+    console.log(endTime);
+  });
+
+task('rewards-pool:set-end-time', 'Set end time')
+  .addParam('rewardsPool', 'Rewards Pool Address')
+  .addParam('endTime', 'End time (unix epoch)')
+  .setAction(async function (
+    { rewardsPool, endTime }: { rewardsPool: string; endTime: string },
+    { ethers }
+  ) {
+    const rewardsPoolContract = (await ethers.getContractAt(
+      'RewardsPool',
+      rewardsPool
+    )) as RewardsPool;
+
+    const tx = await rewardsPoolContract.setEndTime(endTime);
+    console.log('End time set transaction: ', tx.hash);
+
+    await tx.wait();
+
+    const newEndTimeUnix = await rewardsPoolContract.endTime();
+    const newEndTime = new Date(newEndTimeUnix.toNumber() * 1000);
+    console.log('New end time is', newEndTime);
+  });
